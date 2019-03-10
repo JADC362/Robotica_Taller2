@@ -247,7 +247,7 @@ def main():
 				callPos = False
 
 			#Publica la velocidad del robot en el topico motorsVel
-			mensaje = Float32MultiArray(data=[5,0])
+			mensaje = Float32MultiArray(data=[velocidadM1,velocidadM2])
 			pubMotorsVel.publish(mensaje)
 
 			#Se envia a dormir al nodo
