@@ -179,7 +179,6 @@ def graficar():
 			plt.pause(0.01)
 			
 		except Exception as e:
-			rospy.loginfo(e)
 			plt.close('all')
 			hiloCerrado = True
 			break
@@ -240,9 +239,6 @@ def main():
 	#Suscripcion al topico pioneerPosition
 	rospy.Subscriber("pioneerPosition",Twist,callbackPioneerPosition)
 	rospy.Subscriber("simulationTime",Float32,callbackSimulationTime)
-
-    #Tiempo durante el cual duerme el nodo
-	rate = rospy.Rate(10)
 
 	try:
 		#Tiempo durante el cual duerme el nodo
