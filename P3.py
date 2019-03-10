@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 
 #Importacion de librerias
-import sys, os
+import sys, os, time
 import rospy
 import numpy as np
 import threading
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
+import matplotlib.gridspec as gridspec
 from geometry_msgs.msg import Vector3
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Float32
 
-
+#Vectores que representan la posicion del robot
 linear = Vector3()
 angular = Vector3()
+
+#Variable booleana que mantiene el hilo que grafica activo mientras no se cierre ninguna grafica 
 hiloCerrado = False
+hilo = 0
 
 #Especificaciones del chasis del robot
 length = 0.445 
@@ -58,9 +63,9 @@ velocidadActualM2 = 0.0
 #Variable que representa el tiempo de ejecucion
 simulationTimeB = 0 #Tiempo base
 simulationTime = 0 #Tiempo actual
-simulationTimeAnterior = 0
-pasoDeSimulacion = simulationTime-simulationTimeAnterior
-deltaTiempoVelocidades = simulationTime-simulationTimeB #Tiempo que lleva la velocidad actual ejecutandose
+simulationTimeAnterior = 0 #Tiempo anterior
+pasoDeSimulacion = simulationTime-simulationTimeAnterior #Paso de simulacion utilizado por vrep
+deltaTiempoVelocidades = simulationTime-simulationTimeB #Tiempo que lleva ejecutandose la velocidad actual 
 
 #Contador de velocidad actual
 contadorVelAc = 0
@@ -79,11 +84,10 @@ posicionZActualExacta = [posicionInicialZ]
 Error = []
 tiempo = []
 
-#Hilo utilizado para graficar 
-hilo = 0
-
-
 #Funcion callback llamada cuando el topico pionnerPosition es actualizado
+#En esta funcion se actualiza la posicion actual del robot simulado y se calcula la posicion teorica del robot
+#ademas en caso de que sea la primera vez que se ejecuta la funcion se inicializa la posicion inicial del robot 
+
 def callbackPioneerPosition(msg):
 
 	global linear,angular,tetha,posicionInicialX,posicionInicialY,posicionInicialZ
@@ -112,6 +116,7 @@ def callbackPioneerPosition(msg):
 
 
 #Funcion callback llamada cuando el topico simulationTime es actualizado
+#La funcion se encarga de actualizar el tiempo actual, el tiempo anterior, el paso de simulacion y el tiempo que lleva la velocidad actual en el robot
 def callbackSimulationTime(msg):
 	global simulationTimeB, simulationTime, deltaTiempoVelocidades,pasoDeSimulacion
 
@@ -138,55 +143,62 @@ def determinarVelocidadActual():
 		velocidadActualM2 = 0
 	
 
-#Funcion que grafica la posicion actual del pioneer
+#Funcion que grafica la posicion actual del pioneer y su correspondiente error (simulado vs teorico)
 def graficar():
 	global hiloCerrado,hilo
+	plt.ion()
+	wfig = 10
+	hfig = 8
+	proporcionTitulo = 0.9
+	proporcionLabels = 0.7
+	fig = plt.figure(figsize=(wfig,hfig))
+	gs = gridspec.GridSpec(1, 2)
+	gs.update(hspace=10);
 	while not hiloCerrado:
-		try:
-			
-			plt.figure(1)
+
+		try: 
 			plt.clf()
-			plt.plot(posicionXActualSimulada,posicionYActualSimulada,'m--', linewidth = 2)
-			plt.scatter(posicionXActualSimulada[len(posicionXActualSimulada)-1],posicionYActualSimulada[len(posicionYActualSimulada)-1], s=20**2, c= 250, alpha = 0.6 )
-			plt.xlabel("Posicion en el eje X del robot con respecto al marco global",fontsize = 13)
-			plt.ylabel("Posicion en el eje Y del robot con respecto al marco global", fontsize = 13)
-			plt.title("Posicion simulada en tiempo real del robot", fontsize = 18)
-			plt.grid(True)
-			plt.plot(posicionXActualExacta,posicionYActualExacta,'r:', linewidth = 2)
-			plt.scatter(posicionXActualExacta[len(posicionXActualExacta)-1],posicionYActualExacta[len(posicionYActualExacta)-1], s=10**2, c= 500, alpha = 0.4 )
-			plt.savefig(os.getcwd()+"/src/Taller2/resources/punto3.png")
+			ax0 = fig.add_subplot(gs[:, 0])
+			ax0.plot(posicionXActualSimulada,posicionYActualSimulada,'m--', linewidth = 2)
+			ax0.plot(posicionXActualExacta,posicionYActualExacta,'r:', linewidth = 2)
+			ax0.scatter(posicionXActualSimulada[len(posicionXActualSimulada)-1],posicionYActualSimulada[len(posicionYActualSimulada)-1], s=20**2, c= 250, alpha = 0.6 )
+			ax0.set_xlabel("Posicion en el eje X del robot con respecto al marco global [m]",fontsize = wfig*proporcionLabels)
+			ax0.set_ylabel("Posicion en el eje Y del robot con respecto al marco global [m]", fontsize = wfig*proporcionLabels)
+			plt.title("Posicion simulada en tiempo real del robot", fontsize = wfig*proporcionTitulo)
+			ax0.grid(True)
+			ax0.scatter(posicionXActualExacta[len(posicionXActualExacta)-1],posicionYActualExacta[len(posicionYActualExacta)-1], s=10**2, c= 500, alpha = 0.4 )
+			fig.savefig(os.getcwd()+"/src/Taller2/results/GraficasPunto3.png")
+			ax1 = fig.add_subplot(gs[:, 1])
+			ax1.plot(tiempo,Error,'r--',linewidth=2)
+			ax1.set_xlabel("Tiempo[sg]",fontsize = wfig*proporcionLabels)
+			ax1.set_ylabel("Error absoluto[m]", fontsize = wfig*proporcionLabels)
+			plt.title("Error absoluto entre la posicion del robot simulada y la teorica", fontsize = wfig*proporcionTitulo)
+			ax1.grid(True)
+			fig.canvas.draw()
+			fig.canvas.flush_events()
+			plt.pause(0.01)
+			
 		except Exception as e:
+			rospy.loginfo(e)
 			plt.close('all')
 			hiloCerrado = True
-
-		try:
-			plt.figure(2)
-			plt.xlabel("Tiempo[sg]",fontsize = 13)
-			plt.ylabel("Error absoluto[m]", fontsize = 13)
-			plt.title("Error absoluto entre la posicion del robot simulada y la teorica", fontsize = 18)
-			plt.grid(True)
-			plt.plot(tiempo,Error,'r--',linewidth=2)
-			plt.draw()
-			plt.pause(0.1)
-		except Exception as e:
-			plt.close('all')
-			hiloCerrado = True
-
+			break
 	
 
 	return False
 	
-
+#Funcion encargada de calcular la posicion teorica del robot asi como el error actual 
 def calcularRecorridoExacto():
 
 	global posicionXActualExacta,posicionYActualExacta,posicionZActualExacta, Error,radio,velocidadActualM1,velocidadActualM2, J1
 	try:
 		Rinv = np.array([[np.cos(tetha), -np.sin(tetha), 0],
 		[np.sin(tetha), np.cos(tetha),0],[0 ,0 ,1]])
-		phi = [[radio*velocidadActualM1],[radio*velocidadActualM2],[0]]
+		phi = [[radio*velocidadActualM1],[radio*velocidadActualM2],[0]] #Vector phi que lleva las velocidades de los motores
 		J1inv = np.linalg.inv(J1)
-		velocidadesGlobales = Rinv.dot(J1inv.dot(np.array(phi)))
+		velocidadesGlobales = Rinv.dot(J1inv.dot(np.array(phi))) #Velocidades lineal y angular actual del robot
 
+		#Calculo de la posicion actual
 		xExacta = (velocidadesGlobales[0]*pasoDeSimulacion+posicionXActualExacta[len(posicionXActualExacta)-1])
 		yExacta = (velocidadesGlobales[1]*pasoDeSimulacion+posicionYActualExacta[len(posicionYActualExacta)-1])
 		zExacta = (velocidadesGlobales[2]*pasoDeSimulacion+posicionZActualExacta[len(posicionZActualExacta)-1])
@@ -195,15 +207,14 @@ def calcularRecorridoExacto():
 		posicionYActualExacta.append(yExacta)
 		posicionZActualExacta.append(zExacta)
 
+		#Calculo del error 
 		xSimulada = posicionXActualSimulada[len(posicionXActualSimulada)-1]
 		ySimulada = posicionYActualSimulada[len(posicionYActualSimulada)-1]
-
 		ErrorTotal = np.sqrt((xSimulada-xExacta)**2+(ySimulada-yExacta)**2)
 		Error.append(ErrorTotal)
 		tiempo.append(simulationTime)
 
 	except Exception as e:
-		raise e
 		pass
 
 
@@ -238,6 +249,7 @@ def main():
 		rate = rospy.Rate(10)
 		hilo=threading.Thread(target= graficar, name='Graficar')
 		hilo.start()
+		time.sleep(0.1)
 		while not rospy.is_shutdown():
 			determinarVelocidadActual()
 			#Publica la velocidad del robot en el topico motorsVel
@@ -248,6 +260,7 @@ def main():
 			rate.sleep()
 	except Exception as e:
 		raise e
+		pass
 
 if __name__ == '__main__':
 	main()
