@@ -29,8 +29,8 @@ paraRueda1 = [np.pi/2,np.pi,97.65/1000,44.5/100]
 paraRueda2 = [-np.pi/2,0,97.65/1000,44.5/100]
 
 #Matriz J1 que describe las restricciones de deslizamiento y rodamiento
-J1 = np.array([[np.sin(paraRueda1[0]+paraRueda1[1]), -np.cos(paraRueda1[0]+paraRueda1[1]), -(paraRueda1[3])*np.cos(paraRueda1[1])],
-	[np.sin(paraRueda2[0]+paraRueda2[1]), -np.cos(paraRueda2[0]+paraRueda2[1]), -(paraRueda1[3])*np.cos(paraRueda2[1])],
+J1 = np.array([[np.sin(paraRueda2[0]+paraRueda1[1]), -np.cos(paraRueda2[0]+paraRueda1[1]), -(paraRueda1[3])*np.cos(paraRueda1[1])],
+	[np.sin(paraRueda1[0]+paraRueda2[1]), -np.cos(paraRueda1[0]+paraRueda2[1]), -(paraRueda1[3])*np.cos(paraRueda2[1])],
 	[np.cos(paraRueda2[0]+paraRueda2[1]), np.sin(paraRueda2[0]+paraRueda2[1]), (paraRueda1[3])*np.sin(paraRueda2[1])]])
 
 #Variables que representan la velocidad de cada motor del robot
@@ -41,23 +41,19 @@ velocidadM2 = 0
 callTime = False
 callPos = False
 
-#Posicion inicial del robot. Posee un valor por defecto
-posicionInicialCar = [0.0,-np.pi]
 #Posicion final del robot. Posee un valor por defecto
 posicionFinalCar = [40.0,40.0,-np.pi/2]
 #Posicion actual del robot. Posee un valor por defecto
-posicionActualCar = [0.0,0.0,0.0]
+posicionActualCar = [0.0,0.0,-np.pi]
 
 #Variable que representa el tiempo de ejecucion
-simulationTimeB = 0 #Tiempo base
 simulationTime = 0 #Tiempo actual
 simulationTimeAnterior = 0 #Tiempo anterior
 pasoDeSimulacion = simulationTime-simulationTimeAnterior #Paso de simulacion utilizado por vrep
-deltaTiempoVelocidades = simulationTime-simulationTimeB #Tiempo que lleva ejecutandose la velocidad actual 
 
 #Vectores de posicion actual del robot simulado
-posicionXActualSimulada = []
-posicionYActualSimulada = []
+posicionXActualSimulada = [0]
+posicionYActualSimulada = [0]
 
 #Vevtores de posicion actual del robot teorico
 posicionXActualExacta = [0]
@@ -80,43 +76,36 @@ def callbackPioneerPosition(msg):
 	posicionXActualSimulada.append(posicionActualCar[0])
 	posicionYActualSimulada.append(posicionActualCar[1])
 
-	if deltaTiempoVelocidades == 0:
-
-		posicionXActualExacta[0] = posicionXActualSimulada[0]
-		posicionYActualExacta[0] = posicionYActualSimulada[0]
-	else:
-		calcularRecorridoExacto()
+	calcularRecorridoExacto()
 
 #Funcion callback llamada cuando el topico simulationTime es actualizado
 #La funcion se encarga de actualizar el tiempo actual, el tiempo anterior, el paso de simulacion y el tiempo que lleva la velocidad actual en el robot
 def callbackSimulationTime(msg):
-	global simulationTimeB, simulationTime, deltaTiempoVelocidades,pasoDeSimulacion, callTime
+	global simulationTime,pasoDeSimulacion, callTime
 
-	if simulationTimeB == 0:
-		simulationTimeB = msg.data
-		simulationTime = simulationTimeB
+	if simulationTime == 0:
+		simulationTime = msg.data
 
 	callTime = True
-	deltaTiempoVelocidades = simulationTime-simulationTimeB
 	simulationTimeAnterior=simulationTime
 	simulationTime = msg.data
 	pasoDeSimulacion = simulationTime-simulationTimeAnterior
 	
 
-#Obtiene la posicion del robot en coordenadas polares rho, alpha, beta
-def obtenerPosicionPol(posCar):
-	global posicionFinalCar, umbralSuperado, errorRho
-	rho = np.sqrt((posicionFinalCar[0]-posCar[0])**2+(posicionFinalCar[1]-posCar[1])**2)
+#Obtiene la posicion del robot en coordenadas polares rho, alpha, beta a partir de la entrada en posicion cartesianas
+def obtenerPosicionPol():
+	global posicionFinalCar, umbralSuperado, errorRho, posicionActualCar
+	rho = np.sqrt((posicionFinalCar[0]-posicionActualCar[0])**2+(posicionFinalCar[1]-posicionActualCar[1])**2)
 
 	if rho <= errorRho:
 		umbralSuperado = True
 
 	if not umbralSuperado:
-		alpha = -posCar[2]+np.arctan2((posicionFinalCar[1]-posCar[1]),(posicionFinalCar[0]-posCar[0]))
+		alpha = -posicionActualCar[2]+np.arctan2((posicionFinalCar[1]-posicionActualCar[1]),(posicionFinalCar[0]-posicionActualCar[0]))
 	else:
 		alpha = 0;
 		rho = 0;
-	beta = -alpha-posCar[2]
+	beta = -alpha-posicionActualCar[2]
 
 	return np.asarray([rho,alpha,beta])
 
@@ -127,7 +116,7 @@ def calcularCinematicaRobot():
 	k = [0.02,0.4,0.01]
 	
 	#Obtencion del error de posicion en coordenadas polares
-	posPol = np.asarray([0,0,-posicionFinalCar[2]])-obtenerPosicionPol(posicionActualCar)
+	posPol = np.asarray([0,0,-posicionFinalCar[2]])-obtenerPosicionPol()
 	#rospy.loginfo(posPol) #Se imprime en consola el error
 
 	#Ley de control aplicada para encontrar v y w
@@ -178,7 +167,6 @@ def graficar():
 			plt.pause(0.01)
 			
 		except Exception as e:
-			raise e
 			plt.close('all')
 			hiloCerrado = True
 			break
@@ -191,7 +179,7 @@ def calcularRecorridoExacto():
 	global posicionXActualExacta,posicionYActualExacta, Error, paraRueda1, velocidadM1, velocidadM2, J1, posicionActualCar, pasoDeSimulacion, tiempo
 	try:
 		R = np.array([[np.cos(posicionActualCar[2]), np.sin(posicionActualCar[2]), 0],[-np.sin(posicionActualCar[2]), np.cos(posicionActualCar[2]),0],[0 ,0 ,1]])
-		phi = [[(-paraRueda1[2])*velocidadM1],[(-paraRueda1[2])*velocidadM2],[0]] #Vector phi que lleva las velocidades de los motores
+		phi = [[(paraRueda1[2])*velocidadM1],[(paraRueda1[2])*velocidadM2],[0]] #Vector phi que lleva las velocidades de los motores
 		J1inv = np.linalg.inv(J1)
 		Rinv = np.linalg.inv(R)
 		velocidadesGlobales = Rinv.dot(J1inv.dot(np.array(phi))) #Velocidades lineal y angular actual del robot
