@@ -23,11 +23,13 @@ VERSION
   	- V-rep V: 3.6.0
 	
 VERSION LIBRERIAS PYTHON
+
 	- rospy: 1.12.14
 	- pynput: 1.4
   	- numpy: 1.15.1
 	- matplotlib: 2.2.3
-LIBRERIAS PYTHON BASE:
+LIBRERIAS PYTHON BASE
+
 	- time
 	- os
 	- sys
