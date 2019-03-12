@@ -38,7 +38,7 @@ alpha1 = -np.pi/2
 alpha2 = np.pi/2
 beta1 = np.pi
 beta2 = 0 
-tetha = 0
+theta = 0
 
 #Matriz J1 que describe las restricciones de deslizamiento y rodamiento
 
@@ -83,17 +83,18 @@ tiempo = []
 
 def callbackPioneerPosition(msg):
 
-	global linear,angular,tetha,posicionInicialX,posicionInicialY
+	global linear,angular,theta,posicionInicialX,posicionInicialY,posicionInicialZ
 	linear = msg.linear 
 	angular = msg.angular
 	x = linear.x 
 	y = linear.y
-	tetha = angular.z
+	z = linear.z
+	
 	posicionXActualSimulada.append(x)
 	posicionYActualSimulada.append(y)
 
 	if len(posicionXActualSimulada)==1:
-
+		theta = angular.z
 		posicionXActualExacta[0] = posicionXActualSimulada[0]
 		posicionYActualExacta[0] = posicionYActualSimulada[0]
 
@@ -154,7 +155,7 @@ def graficar():
 			plt.title("Posicion simulada en tiempo real del robot", fontsize = wfig*proporcionTitulo)
 			ax0.grid(True)
 			ax0.scatter(posicionXActualExacta[len(posicionXActualExacta)-1],posicionYActualExacta[len(posicionYActualExacta)-1], s=10**2, c= 500, alpha = 0.4 )
-			fig.savefig(os.getcwd()+"/src/Taller2/results/GraficasPunto3.png")
+			fig.savefig(os.getcwd()+"/src/Taller2/results/GraficasPunto3teo.png")
 			ax1 = fig.add_subplot(gs[:, 1])
 			ax1.plot(tiempo,Error,'r--',linewidth=2)
 			ax1.set_xlabel("Tiempo[sg]",fontsize = wfig*proporcionLabels)
@@ -165,21 +166,20 @@ def graficar():
 			fig.canvas.flush_events()
 			plt.pause(0.01)
 			
-		except Exception as e:
+		except Exception as e:	
 			plt.close('all')
 			hiloCerrado = True
-			break
 	
-
 	return False
 	
 #Funcion encargada de calcular la posicion teorica del robot asi como el error actual 
 def calcularRecorridoExacto():
 
-	global posicionXActualExacta,posicionYActualExacta, Error,radio,velocidadActualM1,velocidadActualM2, J1
+	global posicionXActualExacta,posicionYActualExacta,posicionZActualExacta, Error,radio,velocidadActualM1,velocidadActualM2, J1,theta
+
 	try:
-		Rinv = np.array([[np.cos(tetha), -np.sin(tetha), 0],
-		[np.sin(tetha), np.cos(tetha),0],[0 ,0 ,1]])
+		Rinv = np.array([[np.cos(theta), -np.sin(theta), 0],
+		[np.sin(theta), np.cos(theta),0],[0 ,0 ,1]])
 		phi = [[radio*velocidadActualM1],[radio*velocidadActualM2],[0]] #Vector phi que lleva las velocidades de los motores
 		J1inv = np.linalg.inv(J1)
 		velocidadesGlobales = Rinv.dot(J1inv.dot(np.array(phi))) #Velocidades lineal y angular actual del robot
@@ -187,6 +187,12 @@ def calcularRecorridoExacto():
 		#Calculo de la posicion actual
 		xExacta = (velocidadesGlobales[0]*pasoDeSimulacion+posicionXActualExacta[len(posicionXActualExacta)-1])
 		yExacta = (velocidadesGlobales[1]*pasoDeSimulacion+posicionYActualExacta[len(posicionYActualExacta)-1])
+		theta = float(velocidadesGlobales[2]*(pasoDeSimulacion))+theta
+
+		if theta >= np.pi:
+			theta = -theta
+		elif theta <= -np.pi:
+			theta = -theta
 
 		posicionXActualExacta.append(xExacta)
 		posicionYActualExacta.append(yExacta)
@@ -199,6 +205,7 @@ def calcularRecorridoExacto():
 		tiempo.append(simulationTime)
 
 	except Exception as e:
+		raise e
 		pass
 
 
