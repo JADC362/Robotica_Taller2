@@ -20,11 +20,19 @@ VERSION
 	- Rosdistro: kinetic
 	- Rosversion: 1.12.14
 	- taller2_5: 1.0.0
+  	- V-rep V: 3.6.0
+	
+VERSION LIBRERIAS PYTHON
 	- rospy: 1.12.14
 	- pynput: 1.4
-  - numpy:
-  - V-rep V: 3.6.0
-
+  	- numpy: 1.15.1
+	- matplotlib: 2.2.3
+LIBRERIAS PYTHON BASE:
+	- time
+	- os
+	- sys
+	- threading
+	- TKinter
 INSTALACIÓN
 
 	1) Instalar primero ROS, siguiendo el tutorial alojado en la pagina http://wiki.ros.org/kinetic/Installation/Ubuntu y crear un workspace
@@ -48,13 +56,13 @@ EJECUCIÓN
 	- Abrir una nueva terminal
 	- Correr: roscore
 	- Abrir una nueva terminal
-  - Dirigirse al directorio de vrep y correr el programa como: ./vrep.sh
-  - Abrir una nueva terminal
+  	- Dirigirse al directorio de vrep y correr el programa como: ./vrep.sh
+  	- Abrir una nueva terminal
 	- source devel/setup.bash
 	Despues consiste en ejecutar el nodo correspondiente al punto deseado. Para cada punto el codigo es el siguiente:
 	1) rosrun taller2_5 P2.py
-  2) rosrun taller2_5 P3.py nombreArchivoPerfilVelocidades
-  3) rosrun taller2_5 P4.py [xFinal] [yFinal] [θfinal]
+  	2) rosrun taller2_5 P3.py nombreArchivoPerfilVelocidades
+  	3) rosrun taller2_5 P4.py [xFinal] [yFinal] [θfinal]
 	
 CREADORES
 
