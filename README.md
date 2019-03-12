@@ -66,6 +66,8 @@ EJECUCIÓN
   	2) rosrun taller2_5 P3.py nombreArchivoPerfilVelocidadesconExtención
   	3) rosrun taller2_5 P4.py [xFinal] [yFinal] [θfinal]
 	
+	PD: En la carpeta scripts encontraran dos archivos .py del punto 3. Esto se debe, a que el archivo con nombre P3.py 		utiliza el theta arrojado por la simulación mientras que el P3teo.py utiliza el theta teórico. 
+	
 CREADORES
 
 	- John Alejandro Duarte Carraco
