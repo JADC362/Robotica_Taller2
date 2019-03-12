@@ -13,7 +13,7 @@ REQUERIMIENTOS DE SISTEMA
 	- ROS Kinetic
 	- Qt5 Development Libraries
 	- OpenGL
-  - V-REP PRO EDU
+  	- V-REP PRO EDU
 
 VERSION
 
