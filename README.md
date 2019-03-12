@@ -63,7 +63,7 @@ EJECUCIÓN
 	- source devel/setup.bash
 	Despues consiste en ejecutar el nodo correspondiente al punto deseado. Para cada punto el codigo es el siguiente:
 	1) rosrun taller2_5 P2.py
-  	2) rosrun taller2_5 P3.py nombreArchivoPerfilVelocidades
+  	2) rosrun taller2_5 P3.py nombreArchivoPerfilVelocidadesconExtención
   	3) rosrun taller2_5 P4.py [xFinal] [yFinal] [θfinal]
 	
 CREADORES
