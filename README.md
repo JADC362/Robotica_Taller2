@@ -1,4 +1,4 @@
-# taller2_5
+# Robótica_Taller2
 CONTEXTO
 
 Este es un repositorio creado a manera de contener la solución implementada a la tarea 2 del programa ROBÓTICA de la Universidad de los Andes. Esta se enfoca en la creación de un paquete de ROS que solucione 4 puntos diferentes. Estos 4 puntos se dirigen en la solución de retos respecto al control directo e inverso de un robot direccional, así como del entendimiento de la teoría detras de este.
